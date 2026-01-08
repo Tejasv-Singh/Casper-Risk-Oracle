@@ -1,0 +1,20 @@
+
+# Secret Keys
+*.pem
+*.key
+secret_key.pem
+
+# Build Artifacts
+target/
+.next/
+node_modules/
+venv/
+__pycache__/
+*.wasm
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
