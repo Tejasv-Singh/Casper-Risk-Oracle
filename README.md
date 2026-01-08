@@ -62,6 +62,8 @@ graph TD
 
 ### 🛠️ Installation & Usage
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FTejasv-Singh%2FCasper-Risk-Oracle&project-name=casper-risk-oracle&repository-name=casper-risk-oracle&root-directory=risk-dashboard)
+
 #### 1. Contract Deployment (Optional)
 *The contract is already deployed on Testnet. Skip this if you just want to run the agent/dashboard.*
 ```bash
