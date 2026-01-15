@@ -1298,3 +1298,120 @@ Waiting for block...
    💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
    ⚠️  Skipping this era...
    📺 DEMO BRIDGE: Updated frontend data -> 36
+
+📊 ANALYSIS: validator_2 (Home Staker)
+   ├── Concentration Risk: 5.0%
+   ├── Volatility Risk:    90.0%
+   └── Unstake Pressure:   10.0%
+   ✅ SYSTEM SAFE: 29/100
+   🚀 Attempting deploy for validator_2 (Score: 29)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 29
+
+📊 ANALYSIS: validator_2 (Home Staker)
+   ├── Concentration Risk: 5.0%
+   ├── Volatility Risk:    90.0%
+   └── Unstake Pressure:   10.0%
+   ✅ SYSTEM SAFE: 31/100
+   🚀 Attempting deploy for validator_2 (Score: 31)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 31
+
+📊 ANALYSIS: validator_2 (Home Staker)
+   ├── Concentration Risk: 5.0%
+   ├── Volatility Risk:    90.0%
+   └── Unstake Pressure:   10.0%
+   ✅ SYSTEM SAFE: 27/100
+   🚀 Attempting deploy for validator_2 (Score: 27)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 27
+
+📊 ANALYSIS: validator_2 (Home Staker)
+   ├── Concentration Risk: 5.0%
+   ├── Volatility Risk:    90.0%
+   └── Unstake Pressure:   10.0%
+   ✅ SYSTEM SAFE: 34/100
+   🚀 Attempting deploy for validator_2 (Score: 34)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 34
+
+📊 ANALYSIS: validator_2 (Home Staker)
+   ├── Concentration Risk: 5.0%
+   ├── Volatility Risk:    90.0%
+   └── Unstake Pressure:   10.0%
+   ✅ SYSTEM SAFE: 31/100
+   🚀 Attempting deploy for validator_2 (Score: 31)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 31
+
+📊 ANALYSIS: validator_1 (Centralized Exchange)
+   ├── Concentration Risk: 85.0%
+   ├── Volatility Risk:    10.0%
+   └── Unstake Pressure:   5.0%
+   ✅ SYSTEM SAFE: 34/100
+   🚀 Attempting deploy for validator_1 (Score: 34)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 34
+
+📊 ANALYSIS: validator_3 (Institutional Node)
+   ├── Concentration Risk: 15.0%
+   ├── Volatility Risk:    5.0%
+   └── Unstake Pressure:   80.0%
+   ✅ SYSTEM SAFE: 29/100
+   🚀 Attempting deploy for validator_3 (Score: 29)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 29
+
+📊 ANALYSIS: validator_3 (Institutional Node)
+   ├── Concentration Risk: 15.0%
+   ├── Volatility Risk:    5.0%
+   └── Unstake Pressure:   80.0%
+   ✅ SYSTEM SAFE: 31/100
+   🚀 Attempting deploy for validator_3 (Score: 31)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 31
+
+📊 ANALYSIS: validator_2 (Home Staker)
+   ├── Concentration Risk: 5.0%
+   ├── Volatility Risk:    90.0%
+   └── Unstake Pressure:   10.0%
+   ✅ SYSTEM SAFE: 36/100
+   🚀 Attempting deploy for validator_2 (Score: 36)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 36
+
+📊 ANALYSIS: validator_1 (Centralized Exchange)
+   ├── Concentration Risk: 85.0%
+   ├── Volatility Risk:    10.0%
+   └── Unstake Pressure:   5.0%
+   ✅ SYSTEM SAFE: 36/100
+   🚀 Attempting deploy for validator_1 (Score: 36)...
+   ❌ Deploy Failed: Insufficient Balance
+   💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet
+   ⚠️  Skipping this era...
+   📺 DEMO BRIDGE: Updated frontend data -> 36
+
+📊 ANALYSIS: validator_1 (Centralized Exchange)
+   ├── Concentration Risk: 85.0%
+   ├── Volatility Risk:    10.0%
+   └── Unstake Pressure:   5.0%
+   ✅ SYSTEM SAFE: 37/100
+   🚀 Attempting deploy for validator_1 (Score: 37)...
