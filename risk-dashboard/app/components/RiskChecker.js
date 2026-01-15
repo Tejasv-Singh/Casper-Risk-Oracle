@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 // import { CasperServiceByJsonRPC } from 'casper-js-sdk'; // REMOVED TO PREVENT BUILD ERRORS
-import { Shield, ShieldAlert, Activity, RefreshCw, Server, Zap, Lock } from 'lucide-react';
+import { Shield, ShieldAlert, Activity, RefreshCw, Server, Zap, Lock, ExternalLink } from 'lucide-react';
 
 const CONTRACT_HASH = "d0f58ef1f2de95bf8daafd94e334af4c29525fbfba39f60f05f7548a1e44f414";
 // Use localhost proxy if needed, or public node. 
@@ -263,6 +263,19 @@ const RiskChecker = () => {
                                 <div className={`text-sm font-bold uppercase tracking-widest ${richData.recColor}`}>
                                     RECOMMENDATION: {richData.recommendation}
                                 </div>
+                            </div>
+
+                            {/* EXPLORER LINK */}
+                            <div className="mt-6 pt-4 border-t border-slate-800/50 flex justify-end">
+                                <a
+                                    href={`https://testnet.cspr.live/contract/${CONTRACT_HASH}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-[10px] text-slate-500 hover:text-emerald-400 transition-colors uppercase tracking-widest font-bold"
+                                >
+                                    View on Casper Explorer
+                                    <ExternalLink className="w-3 h-3" />
+                                </a>
                             </div>
 
                         </div>
