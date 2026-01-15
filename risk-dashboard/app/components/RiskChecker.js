@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { CasperServiceByJsonRPC } from 'casper-js-sdk';
+// import { CasperServiceByJsonRPC } from 'casper-js-sdk'; // REMOVED TO PREVENT BUILD ERRORS
 import { Shield, ShieldAlert, Activity, RefreshCw, Server, Zap, Lock } from 'lucide-react';
 
 const CONTRACT_HASH = "d0f58ef1f2de95bf8daafd94e334af4c29525fbfba39f60f05f7548a1e44f414";
