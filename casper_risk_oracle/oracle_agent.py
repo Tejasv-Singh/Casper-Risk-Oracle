@@ -5,6 +5,7 @@ import sys
 import subprocess
 import json
 import os
+import re
 
 # --- AESTHETICS ---
 GREEN = '\033[92m'
@@ -69,20 +70,20 @@ class RiskEngine:
         # 4. Normalize to 0-100 Integer
         final_score = int(min(max(raw_score * 100, 0), 100))
         
-        print(f"\n{BLUE}📊 ANALYSIS: {validator_id} ({profile['type']}){RESET}")
-        print(f"   ├── Concentration Risk: {c*100}%")
-        print(f"   ├── Volatility Risk:    {v*100}%")
-        print(f"   └── Unstake Pressure:   {u*100}%")
+        log(f"\n{BLUE}📊 ANALYSIS: {validator_id} ({profile['type']}){RESET}")
+        log(f"   ├── Concentration Risk: {c*100}%")
+        log(f"   ├── Volatility Risk:    {v*100}%")
+        log(f"   └── Unstake Pressure:   {u*100}%")
         
         if final_score > 50:
-             print(f"   {RED}⚠️  RISK FACTOR DETECTED: {final_score}/100{RESET}")
+             log(f"   {RED}⚠️  RISK FACTOR DETECTED: {final_score}/100{RESET}")
         else:
-             print(f"   {GREEN}✅ SYSTEM SAFE: {final_score}/100{RESET}")
+             log(f"   {GREEN}✅ SYSTEM SAFE: {final_score}/100{RESET}")
         
         return final_score
 
 def push_on_chain(validator, score):
-    print(f"   🚀 Attempting deploy for {validator} (Score: {score})...")
+    log(f"   🚀 Attempting deploy for {validator} (Score: {score})...")
     
     contract_hash_formatted = f"hash-{CONTRACT_HASH}"
     
@@ -99,35 +100,78 @@ def push_on_chain(validator, score):
     ]
     
     try:
-        # Anti-Crash Wrapper
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        # Anti-Crash Wrapper: check=False to handle errors manually
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         
-        output_lines = result.stdout.splitlines()
-        deploy_hash = None
-        for line in output_lines:
-            if "deploy_hash" in line:
-                 try:
-                     deploy_hash = line.split('"')[3]
-                 except:
-                     pass
-        
-        if deploy_hash:
-            print(f"   {GREEN}✅ SUCCESS: Deploy Hash: {deploy_hash}{RESET}")
+        if result.returncode != 0:
+            error_msg = (result.stderr + result.stdout).strip()
+            if "insufficient balance" in error_msg.lower():
+                log(f"   {RED}❌ Deploy Failed: Insufficient Balance{RESET}")
+                log(f"   {YELLOW}💰 Tip: Fund your account at https://testnet.cspr.live/tools/faucet{RESET}")
+            else:
+                # Print the first line of the error to avoid spamming
+                short_err = error_msg.splitlines()[0] if error_msg else "Unknown Error"
+                log(f"   {RED}❌ Deploy Failed: {short_err}{RESET}")
+            
+            log(f"   {YELLOW}⚠️  Skipping this era...{RESET}")
         else:
-             print(f"   {GREEN}✅ SUCCESS: (Hash parsed){RESET}")
+            output_lines = result.stdout.splitlines()
+            deploy_hash = None
+            for line in output_lines:
+                if "deploy_hash" in line:
+                     try:
+                         deploy_hash = line.split('"')[3]
+                     except:
+                         pass
+            
+            if deploy_hash:
+                log(f"   {GREEN}✅ SUCCESS: Deploy Hash: {deploy_hash}{RESET}")
+            else:
+                 log(f"   {GREEN}✅ SUCCESS: (Hash parsed){RESET}")
 
     except Exception as e:
-        # The Anti-Crash Logic
-        print(f"   {RED}❌ Deploy Failed: {e}{RESET}")
-        print(f"   {YELLOW}🔄 Network busy. Skipping this era...{RESET}")
+        # Catch-all for other crash types (e.g. binary not found)
+        log(f"   {RED}❌ Deploy Failed (System Error): {e}{RESET}")
+        log(f"   {YELLOW}🔄 Network busy. Skipping this era...{RESET}")
+        pass
+
+
+def log(message):
+    """Prints to console and appends to a log file for the frontend."""
+    # 1. Print to Console (with colors)
+    print(message)
+    
+    # 2. Write to File (Clean only? Or keep colors? Frontend needs to handle ANSI if we keep colors)
+    # Let's strip ANSI for simpler frontend handling for now, or use a library.
+    # Actually, let's keep it simple: Strip ANSI for the file.
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    clean_message = ansi_escape.sub('', message)
+    
+    try:
+        # Path relative to where agent is run (casper_risk_oracle)
+        log_path = "../risk-dashboard/public/agent_logs.txt"
+        with open(log_path, "a") as f:
+            f.write(clean_message + "\n")
+            
+        # Keep file size manageable (tail 50 lines)
+        # This is expensive to do every write, maybe do it occasionally or just let it grow (demo mode)
+        # Let's trust it won't grow too big for a demo.
+    except Exception:
         pass
 
 def run_oracle():
+    # clear log file on start
+    try:
+        with open("../risk-dashboard/public/agent_logs.txt", "w") as f:
+            f.write("--- AGENT STARTED ---\n")
+    except:
+        pass
+
     engine = RiskEngine()
     validators = list(VALIDATOR_DATA.keys())
     
-    print(f"{GREEN}🤖 Casper Risk Oracle v1.0 [DIRECTOR MODE ACTIVE]{RESET}")
-    print("Waiting for block...")
+    log(f"{GREEN}🤖 Casper Risk Oracle v1.0 [DIRECTOR MODE ACTIVE]{RESET}")
+    log("Waiting for block...")
 
     while True:
         target = "validator_1" # Focus on one for the demo, or mix it up
@@ -142,7 +186,7 @@ def run_oracle():
                     if content:
                         score = int(content)
                         override_active = True
-                        print(f"{RED}⚠️  MANUAL OVERRIDE DETECTED: Pushing {score}{RESET}")
+                        log(f"{RED}⚠️  MANUAL OVERRIDE DETECTED: Pushing {score}{RESET}")
         except Exception:
             pass # Fail silently to auto mode
             
@@ -151,6 +195,23 @@ def run_oracle():
              score = engine.compute_risk(target)
 
         push_on_chain(target, score)
+        
+        # --- DEMO BRIDGE ---
+        # Write to frontend public folder for instant updates
+        try:
+            demo_data = {
+                "validator": target,
+                "score": score,
+                "timestamp": int(time.time())
+            }
+            # Adjust path as needed based on where you run the agent
+            # Assuming agent is in casper_risk_oracle and dashboard is sibling
+            json_path = "../risk-dashboard/public/risk_status.json"
+            with open(json_path, "w") as f:
+                json.dump(demo_data, f)
+            log(f"   {BLUE}📺 DEMO BRIDGE: Updated frontend data -> {score}{RESET}")
+        except Exception as e:
+            log(f"   {RED}❌ DEMO BRIDGE FAILED: {e}{RESET}")
         
         # Faster loop for demo purposes (30s)
         time.sleep(30)

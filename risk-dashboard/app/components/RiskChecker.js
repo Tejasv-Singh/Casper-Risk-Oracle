@@ -29,6 +29,8 @@ const RiskChecker = () => {
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(0);
     const [isPolling, setIsPolling] = useState(false);
+    const [logs, setLogs] = useState("");
+    const logEndRef = useRef(null);
 
     // Polling Ref to clear interval
     const pollingRef = useRef(null);
@@ -42,14 +44,53 @@ const RiskChecker = () => {
         return () => clearInterval(timerRef.current);
     }, []);
 
-    const fetchData = async (valAddress) => {
-        if (!valAddress) return;
+    // Polling for Logs
+    useEffect(() => {
+        const fetchLogs = async () => {
+            try {
+                const res = await fetch('/agent_logs.txt');
+                if (res.ok) {
+                    const text = await res.text();
+                    setLogs(text);
+                }
+            } catch (err) {
+                // ignore errors for logs
+            }
+        };
 
-        console.log("Fetching data for:", valAddress);
+        const interval = setInterval(fetchLogs, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Auto-scroll to bottom of logs
+    useEffect(() => {
+        if (logEndRef.current) {
+            logEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [logs]);
+
+    const fetchData = async (valAddress) => {
+        // if (!valAddress) return; // Allow empty valAddress to fetch global system status if needed 
+
+        // console.log("Fetching data for:", valAddress);
         // setLoading(true); // Don't block UI on poll
         setError(null);
 
         try {
+            // --- DEMO MODE: FETCH FROM LOCAL BRIDGE ---
+            const res = await fetch('/risk_status.json');
+            if (!res.ok) throw new Error("Demo bridge data missing");
+            const data = await res.json();
+
+            // If the user hasn't typed anything, or if it matches, update
+            // Actually for the demo, let's just show whatever the agent is screaming about
+            // This is "Director Mode" - the agent drives the UI
+            setValidator(data.validator);
+            setRiskScore(data.score);
+            setLastUpdated(0); // Reset timer
+
+            /* 
+            // REAL CHAIN LOGIC (Disabled for Demo reliability)
             const client = new CasperServiceByJsonRPC(CASPER_NODE_URL);
             const stateRootHash = await client.getStateRootHash();
             const contractHashAsKey = `hash-${CONTRACT_HASH}`;
@@ -63,12 +104,13 @@ const RiskChecker = () => {
             const score = parseInt(response.CLValue.data);
             setRiskScore(score);
             setLastUpdated(0); // Reset timer
+            */
 
         } catch (err) {
             console.error(err);
             // Only set error if we don't have data yet? Or just log it.
             if (riskScore === null) {
-                setError("Validator not found or network error.");
+                setError("Waiting for Agent...");
             }
         } finally {
             setLoading(false);
@@ -142,6 +184,16 @@ const RiskChecker = () => {
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                         <span className="text-xs text-emerald-500 font-bold">SYSTEM ONLINE</span>
                     </div>
+                </div>
+
+                {/* LIVE TERMINAL LOGS */}
+                <div className="bg-black p-4 border-b border-slate-800 font-mono text-xs h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900" style={{ scrollBehavior: 'smooth' }}>
+                    {logs ? (
+                        <pre className="text-emerald-500/80 whitespace-pre-wrap leading-tight">{logs}</pre>
+                    ) : (
+                        <div className="text-slate-600 italic">Connecting to Oracle Agent...</div>
+                    )}
+                    <div ref={logEndRef} />
                 </div>
 
                 {/* SEARCH AREA */}
