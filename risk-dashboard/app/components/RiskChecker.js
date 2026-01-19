@@ -227,7 +227,12 @@ const RiskChecker = () => {
                             <div className="flex justify-between items-start mb-8">
                                 <div>
                                     <div className="text-slate-500 text-xs uppercase mb-1">Target Validator</div>
-                                    <div className="text-slate-200 font-bold text-lg">{validator}</div>
+                                    <div className="text-slate-200 font-bold text-lg flex items-center gap-2">
+                                        {validator}
+                                        <a href={`/validator/${validator}`} className="bg-slate-800 hover:bg-emerald-600 text-white p-1 rounded transition-colors" title="View Deep Analysis">
+                                            <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                    </div>
                                 </div>
                                 <div className="text-right">
                                     <div className="flex items-center gap-2 justify-end mb-1">
