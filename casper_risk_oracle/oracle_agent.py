@@ -6,6 +6,8 @@ import subprocess
 import json
 import os
 import re
+import requests
+import math
 
 # --- AESTHETICS ---
 GREEN = '\033[92m'
@@ -14,73 +16,105 @@ BLUE = '\033[94m'
 YELLOW = '\033[93m'
 RESET = '\033[0m'
 
-# --- CHAIN-GPT HOOK ---
-# TODO: ChainGPT Integration
-# In v2, we will offload the 'Market Noise' calculation to ChainGPT's AI API
-# to analyze social sentiment around specific validators.
-# endpoint = "https://api.chaingpt.org/v1/sentiment"
-
 # --- CONFIGURATION ---
 CONTRACT_HASH = "d0f58ef1f2de95bf8daafd94e334af4c29525fbfba39f60f05f7548a1e44f414"
 SECRET_KEY_PATH = "Account 1_secret_key.pem"
 CHAIN_NAME = "casper-test"
 NODE_ADDRESS = "https://node.testnet.casper.network/rpc"
-PAYMENT_AMOUNT = "400000000000" # 400 CSPR
+PAYMENT_AMOUNT = "2500000000" # 2.5 CSPR
 
-VALIDATOR_DATA = {
-    "validator_1": {
-        "type": "Centralized Exchange",
-        "stake_concentration": 0.85,
-        "reward_volatility": 0.10,
-        "unstake_spike": 0.05
-    },
-    "validator_2": {
-        "type": "Home Staker",
-        "stake_concentration": 0.05,
-        "reward_volatility": 0.90,
-        "unstake_spike": 0.10
-    },
-    "validator_3": {
-        "type": "Institutional Node",
-        "stake_concentration": 0.15,
-        "reward_volatility": 0.05,
-        "unstake_spike": 0.80
-    }
+# --- API CONFIG ---
+CSPR_CLOUD_KEY = "019bd739-a94c-72a9-9435-05b258d3c16c"
+BASE_URL = "https://api.cspr.cloud"
+HEADERS = {
+    "Authorization": CSPR_CLOUD_KEY,
+    "accept": "application/json"
 }
 
 class RiskEngine:
     """
-    Implements the Casper Liquid Staking Risk Model (CLSRM).
+    Implements the Casper Liquid Staking Risk Model (CLSRM) using Real-Time Data.
     Formula: Risk = 0.4(Concentration) + 0.3(Volatility) + 0.3(Unstake_Spike)
     """
-    def compute_risk(self, validator_id):
-        profile = VALIDATOR_DATA.get(validator_id)
+    def get_latest_era_id(self):
+        try:
+             # Get Status/Block Info to find latest Era
+             url = f"{BASE_URL}/blocks?page=1&limit=1&order_by=block_height&order_direction=desc"
+             response = requests.get(url, headers=HEADERS, timeout=10)
+             if response.status_code == 200:
+                 data = response.json().get('data', [])
+                 if data:
+                     return data[0]['era_id']
+             return None
+        except Exception:
+             return None
+
+    def get_top_validators(self, era_id, limit=100):
+        try:
+            url = f"{BASE_URL}/validators?era_id={era_id}&page=1&limit={limit}&order_by=total_stake&order_direction=DESC"
+            response = requests.get(url, headers=HEADERS, timeout=10) 
+            if response.status_code == 200:
+                data = response.json().get('data', [])
+                if not data:
+                    log(f"{YELLOW}⚠️ API returned empty data list. Full response: {response.json()}{RESET}")
+                return data
+            else:
+                log(f"{RED}❌ API Error (Validators): {response.status_code} - {response.text}{RESET}")
+            return []
+        except Exception as e:
+            log(f"{RED}❌ API Error (Validators): {e}{RESET}")
+            return []
+
+    def get_validator_rewards(self, pubkey):
+         try:
+            # Fetch last 10 eras of rewards
+            url = f"{BASE_URL}/validators/{pubkey}/rewards?page=1&limit=10"
+            response = requests.get(url, headers=HEADERS, timeout=10)
+            if response.status_code == 200:
+                return response.json().get('data', [])
+            return []
+         except Exception:
+             return []
+
+    def calculate_volatility(self, rewards_data):
+        if not rewards_data or len(rewards_data) < 2:
+            return 0.1 # Default low volatility
         
-        # 1. Fetch Core Metrics (Simulated for Testnet)
-        c = profile["stake_concentration"]
-        v = profile["reward_volatility"]
-        u = profile["unstake_spike"]
+        amounts = [float(r['amount']) for r in rewards_data]
+        mean = sum(amounts) / len(amounts)
+        if mean == 0: return 0
         
-        # 2. Add Market Noise
-        noise = random.uniform(-0.05, 0.05)
+        variance = sum((x - mean) ** 2 for x in amounts) / len(amounts)
+        std_dev = math.sqrt(variance)
+        cv = std_dev / mean # Coefficient of Variation
+        return min(cv * 5, 1.0) # Scale up to make it visible, max 1.0
+
+    def calculate_concentration(self, validator_stake, total_stake):
+        if total_stake == 0: return 0
+        share = float(validator_stake) / float(total_stake)
+        # Scale: if > 10% of network, max risk.
+        return min(share * 10, 1.0) 
+
+    def compute_risk(self, pubkey, stake, total_network_stake):
+        # 1. Concentration
+        c = self.calculate_concentration(stake, total_network_stake)
         
-        # 3. The Algorithm
+        # 2. Volatility (from live rewards)
+        rewards = self.get_validator_rewards(pubkey)
+        v = self.calculate_volatility(rewards)
+        
+        # 3. Unstake Spike (Still Simulated as no direct API yet)
+        u = random.uniform(0.0, 0.2) # Mostly stable
+        
+        # Add Market Noise (ChainGPT placeholder)
+        noise = random.uniform(-0.02, 0.02)
+        
+        # The Algorithm
         raw_score = (c * 0.40) + (v * 0.30) + (u * 0.30) + noise
         
-        # 4. Normalize to 0-100 Integer
         final_score = int(min(max(raw_score * 100, 0), 100))
         
-        log(f"\n{BLUE}📊 ANALYSIS: {validator_id} ({profile['type']}){RESET}")
-        log(f"   ├── Concentration Risk: {c*100}%")
-        log(f"   ├── Volatility Risk:    {v*100}%")
-        log(f"   └── Unstake Pressure:   {u*100}%")
-        
-        if final_score > 50:
-             log(f"   {RED}⚠️  RISK FACTOR DETECTED: {final_score}/100{RESET}")
-        else:
-             log(f"   {GREEN}✅ SYSTEM SAFE: {final_score}/100{RESET}")
-        
-        return final_score
+        return final_score, c, v, u
 
 def push_on_chain(validator, score):
     log(f"   🚀 Attempting deploy for {validator} (Score: {score})...")
@@ -163,57 +197,109 @@ def run_oracle():
     # clear log file on start
     try:
         with open("../risk-dashboard/public/agent_logs.txt", "w") as f:
-            f.write("--- AGENT STARTED ---\n")
+            f.write("--- AGENT STARTED (REAL DATA MODE) ---\n")
     except:
         pass
 
     engine = RiskEngine()
-    validators = list(VALIDATOR_DATA.keys())
+    last_pushed_scores = {}
     
-    log(f"{GREEN}🤖 Casper Risk Oracle v1.0 [DIRECTOR MODE ACTIVE]{RESET}")
-    log("Waiting for block...")
+    log(f"{GREEN}🤖 Casper Risk Oracle v2.0 [LIVE DATA ACTIVE]{RESET}")
+    log(f"   Connecting to {BASE_URL}...")
 
     while True:
-        target = "validator_1" # Focus on one for the demo, or mix it up
+        # Override Logic (Director Mode)
+        override_target = None
+        override_score = None
         
-        # --- DIRECTOR MODE ---
-        score = 0
-        override_active = False
         try:
-            if os.path.exists("override.txt"):
+             if os.path.exists("override.txt"):
                 with open("override.txt", "r") as f:
                     content = f.read().strip()
                     if content:
-                        score = int(content)
-                        override_active = True
-                        log(f"{RED}⚠️  MANUAL OVERRIDE DETECTED: Pushing {score}{RESET}")
+                        if ":" in content:
+                            parts = content.split(":")
+                            if len(parts) >= 2:
+                                override_target = parts[0].strip()
+                                override_score = int(parts[1].strip())
+                        else:
+                            override_target = "validator_1"
+                            override_score = int(content)
         except Exception:
-            pass # Fail silently to auto mode
-            
-        if not override_active:
-             target = random.choice(validators)
-             score = engine.compute_risk(target)
+            pass
 
-        push_on_chain(target, score)
+        if override_target:
+             log(f"{RED}⚠️  MANUAL OVERRIDE DETECTED: {override_target} -> {override_score}{RESET}")
+             push_on_chain(override_target, override_score)
+             time.sleep(10)
+             continue
+
+        # Standard Mode (Top 100 Validators)
+        log(f"\n{BLUE}🔄 Fetching Latest Era...{RESET}")
+        era_id = engine.get_latest_era_id()
+        if era_id is None:
+             log(f"{RED}❌ Failed to get Era ID. Retrying...{RESET}")
+             time.sleep(5)
+             continue
+             
+        log(f"{BLUE}🔄 Fetching Top Validators (Era {era_id})...{RESET}")
+        validators = engine.get_top_validators(era_id, limit=100)
         
-        # --- DEMO BRIDGE ---
-        # Write to frontend public folder for instant updates
-        try:
-            demo_data = {
-                "validator": target,
-                "score": score,
-                "timestamp": int(time.time())
-            }
-            # Adjust path as needed based on where you run the agent
-            # Assuming agent is in casper_risk_oracle and dashboard is sibling
-            json_path = "../risk-dashboard/public/risk_status.json"
-            with open(json_path, "w") as f:
-                json.dump(demo_data, f)
-            log(f"   {BLUE}📺 DEMO BRIDGE: Updated frontend data -> {score}{RESET}")
-        except Exception as e:
-            log(f"   {RED}❌ DEMO BRIDGE FAILED: {e}{RESET}")
+        # Calculate Total Network Stake for concentration
+        total_stake = sum(int(v['total_stake']) for v in validators)
         
-        # Faster loop for demo purposes (30s)
+        processed_count = 0
+        
+        for v_data in validators:
+            pubkey = v_data['public_key']
+            stake = int(v_data['total_stake'])
+            
+            # Compute Risk
+            score, c, v, u = engine.compute_risk(pubkey, stake, total_stake)
+            
+            # Check Threshold (Only push if changed > 5%)
+            last_score = last_pushed_scores.get(pubkey, -1)
+            diff = abs(score - last_score)
+            
+            if diff > 5 or last_score == -1:
+                log(f"\n{BLUE}📊 ANALYSIS: {pubkey[:10]}...{RESET}")
+                log(f"   ├── Concentration Risk: {c*100:.2f}%")
+                log(f"   ├── Volatility Risk:    {v*100:.2f}%")
+                log(f"   └── Unstake Pressure:   {u*100:.2f}%")
+                
+                if score > 50:
+                     log(f"   {RED}⚠️  RISK SCORE: {score}/100{RESET}")
+                else:
+                     log(f"   {GREEN}✅ RISK SCORE: {score}/100{RESET}")
+                     
+                push_on_chain(pubkey, score)
+                last_pushed_scores[pubkey] = score
+                
+                # Demo Bridge Update (Show the latest pushed one)
+                try:
+                    demo_data = {
+                        "validator": pubkey,
+                        "score": score,
+                        "timestamp": int(time.time()),
+                        "details": {
+                            "concentration": c,
+                            "volatility": v,
+                            "unstake_spike": u
+                        }
+                    }
+                    with open("../risk-dashboard/public/risk_status.json", "w") as f:
+                        json.dump(demo_data, f)
+                except:
+                    pass
+            else:
+                # log(f"   Skipping {pubkey[:10]}... (Stable Risk: {score})")
+                pass
+            
+            processed_count += 1
+            # Rate limit protection (don't spam API in loop too fast if processing many)
+            # Actually we already fetched data, but maybe push_on_chain takes time.
+            
+        log(f"{GREEN}✅ Cycle Complete. Processed {processed_count} validators. Sleeping...{RESET}")
         time.sleep(30)
 
 if __name__ == "__main__":
